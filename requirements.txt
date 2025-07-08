@@ -1,0 +1,12 @@
+torch
+numpy
+pandas
+matplotlib
+geopandas
+geopy
+tqdm
+ipython
+librosa
+soundfile
+pypesq
+pystoi

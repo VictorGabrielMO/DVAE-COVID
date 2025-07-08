@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from .utils import myconf, get_logger, loss_ISD, loss_KLD, loss_MPJPE
-from .dataset import h36m_dataset, speech_dataset
+from .dataset import h36m_dataset, speech_dataset, covid_dataset
 from .model import build_VAE, build_DKF, build_STORN, build_VRNN, build_SRNN, build_RVAE, build_DSAE
 
 
@@ -144,6 +144,8 @@ class LearningAlgorithm():
             train_dataloader, val_dataloader, train_num, val_num = speech_dataset.build_dataloader(self.cfg)
         elif self.dataset_name == 'H36M':
             train_dataloader, val_dataloader, train_num, val_num = h36m_dataset.build_dataloader(self.cfg)
+        elif self.dataset_name == 'COVID':
+            train_dataloader, val_dataloader, train_num, val_num = covid_dataset.build_dataloader(self.cfg)
         else:
             logger.error('Unknown datset')
         logger.info('Training samples: {}'.format(train_num))
@@ -220,6 +222,11 @@ class LearningAlgorithm():
                     batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
                     recon_batch_data = self.model(batch_data)
                     loss_recon = loss_MPJPE(batch_data*1000, recon_batch_data*1000)
+                elif self.dataset_name == 'COVID':
+                    # (batch_size, seq_len, x_dim) -> (seq_len, batch_size, x_dim)
+                    batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
+                    recon_batch_data = self.model(batch_data)
+                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, batch_data, reduction='sum')
                 seq_len, bs, _ = self.model.z_mean.shape
                 loss_recon = loss_recon / (seq_len * bs)
 
@@ -255,6 +262,11 @@ class LearningAlgorithm():
                     batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
                     recon_batch_data = self.model(batch_data)
                     loss_recon = loss_MPJPE(batch_data*1000, recon_batch_data*1000)
+                elif self.dataset_name == 'COVID':
+                    # (batch_size, seq_len, x_dim) -> (seq_len, batch_size, x_dim)
+                    batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
+                    recon_batch_data = self.model(batch_data)
+                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, batch_data, reduction='sum')
                 seq_len, bs, _ = self.model.z_mean.shape
                 loss_recon = loss_recon / (seq_len * bs)
                 

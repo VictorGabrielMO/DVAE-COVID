@@ -33,6 +33,22 @@ def loss_MPJPE(x, y, nfeats=3):
     ret = (x-y).norm(dim=-1).mean(dim=-1).sum()
     return ret
 
+def loss_rec_plus_KLD(x_pred, x_true, z_mean, z_logvar, z_mean_p, z_logvar_p, beta=1.0):
+    # Reconstruction loss: MSE over the sequence
+    recon_loss = torch.nn.functional.mse_loss(x_pred, x_true, reduction='mean')
+
+    # KL divergence between q(z|x,h) ~ N(z_mean, exp(z_logvar)) (approximate posterior)
+    # and p(z|h) ~ N(z_mean_p, exp(z_logvar_p)) (prior)
+    kl_loss = -0.5 * torch.sum(
+        z_logvar - z_logvar_p
+        - ((z_logvar.exp() + (z_mean - z_mean_p).pow(2)) / (z_logvar_p.exp() + 1e-10))
+    )
+    kl_loss = kl_loss / x_true.shape[1]  # normalize by batch_size
+
+    return recon_loss + beta * kl_loss
+
+
+
 # def loss_ISD(x, y):
 #     seq_len, bs, _ = x.shape
 #     ret = torch.sum( x/y - torch.log(x/y) - 1)
