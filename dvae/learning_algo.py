@@ -209,8 +209,9 @@ class LearningAlgorithm():
 
 
             # Batch training
-            for _, batch_data in enumerate(train_dataloader):
+            for _, (batch_data, target) in enumerate(train_dataloader):
                 batch_data = batch_data.to(self.device)
+                target = target.to(self.device)
                 
                 if self.dataset_name == 'WSJ0':
                     # (batch_size, x_dim, seq_len) -> (seq_len, batch_size, x_dim)
@@ -224,9 +225,10 @@ class LearningAlgorithm():
                     loss_recon = loss_MPJPE(batch_data*1000, recon_batch_data*1000)
                 elif self.dataset_name == 'COVID':
                     # (batch_size, seq_len, x_dim) -> (seq_len, batch_size, x_dim)
-                    batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
+                    batch_data = batch_data.permute(1, 0, 2)
+                    target = target.permute(1, 0, 2)
                     recon_batch_data = self.model(batch_data)
-                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, batch_data, reduction='sum')
+                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, target, reduction='sum')
                 seq_len, bs, _ = self.model.z_mean.shape
                 loss_recon = loss_recon / (seq_len * bs)
 
@@ -248,10 +250,11 @@ class LearningAlgorithm():
                 train_kl[epoch] += loss_kl.item() * bs
                 
             # Validation
-            for _, batch_data in enumerate(val_dataloader):
+            for _, (batch_data, target) in enumerate(val_dataloader):
 
                 batch_data = batch_data.to(self.device)
-
+                target = target.to(self.device)
+                
                 if self.dataset_name == 'WSJ0':
                     # (batch_size, x_dim, seq_len) -> (seq_len, batch_size, x_dim)
                     batch_data = batch_data.permute(2, 0, 1)
@@ -264,9 +267,11 @@ class LearningAlgorithm():
                     loss_recon = loss_MPJPE(batch_data*1000, recon_batch_data*1000)
                 elif self.dataset_name == 'COVID':
                     # (batch_size, seq_len, x_dim) -> (seq_len, batch_size, x_dim)
-                    batch_data = batch_data.permute(1, 0, 2) / 1000 # normalize to meters
+                    batch_data = batch_data.permute(1, 0, 2)
+                    target = target.permute(1, 0, 2)
+                    print(batch_data.shape)
                     recon_batch_data = self.model(batch_data)
-                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, batch_data, reduction='sum')
+                    loss_recon = torch.nn.functional.mse_loss(recon_batch_data, target, reduction='sum')
                 seq_len, bs, _ = self.model.z_mean.shape
                 loss_recon = loss_recon / (seq_len * bs)
                 
