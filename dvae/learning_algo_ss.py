@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from .utils import myconf, get_logger, loss_ISD, loss_KLD, loss_MPJPE
-from .dataset import h36m_dataset, speech_dataset
+from .dataset import covid_dataset
 from .model_ss import build_SRNN_ss
 
 
@@ -87,11 +87,10 @@ class LearningAlgorithm_ss():
         # Build model
         self.build_model()
         # Create data loader
-        if self.dataset_name == 'WSJ0':
-            train_dataloader, val_dataloader, train_num, val_num = speech_dataset.build_dataloader(self.cfg)
-        elif self.dataset_name == 'H36M':
-            train_dataloader, val_dataloader, train_num, val_num = h36m_dataset.build_dataloader(self.cfg)
-            print('Unknown datset')
+        if self.dataset_name == 'COVID':
+            train_dataloader, val_dataloader, train_num, val_num = covid_dataset.build_dataloader(self.cfg)
+        else:
+            logger.error('Unknown datset')
         print('Training samples: {}'.format(train_num))
         print('Validation samples: {}'.format(val_num))
 
@@ -144,12 +143,8 @@ class LearningAlgorithm_ss():
         optimizer = self.init_optimizer()
 
         # Create data loader
-        if self.dataset_name == 'WSJ0':
-            self.model.out_mean = False
-            train_dataloader, val_dataloader, train_num, val_num = speech_dataset.build_dataloader(self.cfg)
-        elif self.dataset_name == 'H36M':
-            self.model.out_mean = True
-            train_dataloader, val_dataloader, train_num, val_num = h36m_dataset.build_dataloader(self.cfg)
+        if self.dataset_name == 'COVID':
+            train_dataloader, val_dataloader, train_num, val_num = covid_dataset.build_dataloader(self.cfg)
         else:
             logger.error('Unknown datset')
         logger.info('Training samples: {}'.format(train_num))

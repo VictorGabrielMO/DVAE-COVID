@@ -3,8 +3,9 @@ from torch.utils.data import Dataset, DataLoader, random_split
 import numpy as np
 import random
 import pandas as pd
+import os
 
-def build_dataloader(cfg):
+def build_dataloader(cfg, save_dir):
     """
     Splits the time series into training and validation datasets, builds loaders.
     Returns batches of shape: (seq_len, batch_size, features)
@@ -20,7 +21,7 @@ def build_dataloader(cfg):
     random_split_flag = cfg.getboolean('DataFrame', 'random_split_flag')
     seed = cfg.getint('DataFrame', 'seed')
     batch_size = cfg.getint('DataFrame', 'batch_size')
-
+    
     # Preprocess 
     all_windows = data_preprocessing(
         df_path=df_path,
@@ -37,6 +38,8 @@ def build_dataloader(cfg):
         all_windows, validation_ratio, random_split_flag,
         window_length, step_length, seed
     )
+
+    torch.save(valid_windows, os.path.join(save_dir,'valid_windows.pt'))
 
     # Create datasets
     train_dataset = HaddadDataset(train_windows, input_col_list, context_length)
@@ -87,6 +90,8 @@ def data_preprocessing(df_path, input_col_list, target_col_list,
         window_list.append(windows)
 
     window_list = torch.cat(window_list, dim=0)
+    window_list = window_list.contiguous().view(-1, window_length, len(new_col_list))
+    
     return window_list
 
 
